@@ -43,3 +43,45 @@ float perlin(float3 p, float3 freq, float3 rep, float3 offset)
     
     return lerp(mix_y0, mix_y1, t_2);
 }
+
+float perlin(float2 p, float2 freq, float2 rep, float2 offset)
+{
+    p += offset / freq;
+    p *= freq;
+    float4 gridSet = floor(p.xyxy) + float4(0.0, 0.0, 1.0, 1.0);
+    float4 dirSet = frac(p.xyxy) - float4(0.0, 0.0, 1.0, 1.0);
+    // 必要时保证噪声在连接处连续
+    gridSet = fmod(gridSet, (rep * freq).xyxy);
+    
+    float2 gridLevel_00 = hash22(gridSet.xy) * 2.0 - 1.0;
+    float2 gridLevel_01 = hash22(gridSet.xw) * 2.0 - 1.0;
+    float2 gridLevel_10 = hash22(gridSet.zy) * 2.0 - 1.0;
+    float2 gridLevel_11 = hash22(gridSet.zw) * 2.0 - 1.0;
+    
+    float product_00 = dot(gridLevel_00, dirSet.xy);
+    float product_01 = dot(gridLevel_01, dirSet.xw);
+    float product_10 = dot(gridLevel_10, dirSet.zy);
+    float product_11 = dot(gridLevel_11, dirSet.zw);
+    
+    float t_0 = pow(dirSet.x, 3.0) * (6.0 * pow(dirSet.x, 2.0) - 15.0 * dirSet.x + 10.0);
+    float t_1 = pow(dirSet.y, 3.0) * (6.0 * pow(dirSet.y, 2.0) - 15.0 * dirSet.y + 10.0);
+    
+    // return dirSet.x;
+    return lerp(lerp(product_00, product_10, t_0), lerp(product_01, product_11, t_0), t_1);
+}
+
+float fbm(float2 x, float H, float2 freq, float2 rep, float2 offset, int numOctaves)
+{    
+    float G = exp2(-H);
+    float f = 1.0;
+    float a = 1.0;
+    float t = 0.0;
+    for( int i=0; i < numOctaves; i++ )
+    {
+        t += a * perlin(f * x, freq, f * rep, offset / freq);
+        f *= 2.0;
+        a *= G;
+    }
+    return t;
+}
+
