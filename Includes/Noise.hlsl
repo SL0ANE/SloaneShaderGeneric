@@ -2,6 +2,23 @@
 #include "Random.hlsl"
 #endif
 
+float voronoi(float2 p, float2 freq, float2 rep, float2 offset) {
+    p *= freq;
+    p += offset;
+    float2 po = floor(p);
+    float2 f = frac(p);
+    float res = 0.0;
+    for (int j = -1; j <= 1; j++) {
+        for (int i = -1; i <= 1; i++) {
+            float2 b = float2(i, j);
+            float2 pos = fmod(po + b, rep * freq);
+            float2 r = float2(b) - f + hash22(pos);
+            res += 1.0 / pow(dot(r, r), 8.0);
+        }
+    }
+    return pow(1.0 / res, 0.0625);
+}
+
 float perlin(float3 p, float3 freq, float3 rep, float3 offset)
 {
     p += offset / freq;
